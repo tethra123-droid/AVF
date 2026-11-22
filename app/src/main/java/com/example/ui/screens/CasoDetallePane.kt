@@ -33,9 +33,11 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.R
+import com.example.model.BilateralAnalysis
 import com.example.model.BriefExchange
 import com.example.model.DocumentedCase
 import com.example.model.GroupCase
+import com.example.ui.components.DateJumpChip
 import com.example.ui.components.SectionEyebrow
 import com.example.ui.components.TacticPill
 import com.example.ui.components.VerbatimQuoteCard
@@ -46,6 +48,7 @@ fun CasoDetallePane(
     documentedCase: DocumentedCase,
     bookmarkedIds: Set<String>,
     onToggleBookmark: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     showBackButton: Boolean,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
@@ -87,19 +90,18 @@ fun CasoDetallePane(
                     }
                 }
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     TacticPill(
                         label = documentedCase.code,
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    Text(
-                        text = documentedCase.dateRange,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                    DateJumpChip(
+                        dateLabel = documentedCase.dateRange,
+                        onClick = { onOpenChatAtDate(documentedCase.dateRange, null) }
                     )
                 }
 
@@ -177,6 +179,7 @@ fun CasoDetallePane(
                     quote = quote,
                     isBookmarked = quote.id in bookmarkedIds,
                     onToggleBookmark = { onToggleBookmark(quote.id) },
+                    onDateClick = { date, text -> onOpenChatAtDate(date, text) },
                     modifier = Modifier.widthIn(max = 760.dp)
                 )
             }
@@ -201,6 +204,7 @@ fun CasoDetallePane(
             ) { brief ->
                 BriefExchangeCard(
                     exchange = brief,
+                    onDateClick = { onOpenChatAtDate("${brief.date} · ${brief.timeRange}", brief.initialClaim) },
                     modifier = Modifier.widthIn(max = 760.dp)
                 )
             }
@@ -227,6 +231,29 @@ fun CasoDetallePane(
                     groupCase = groupCase,
                     bookmarkedIds = bookmarkedIds,
                     onToggleBookmark = onToggleBookmark,
+                    onOpenChatAtDate = onOpenChatAtDate,
+                    modifier = Modifier.widthIn(max = 760.dp)
+                )
+            }
+        }
+
+        // Bilateral objective analysis (Sun's reaction, flaws, and infantilization traps)
+        documentedCase.bilateralAnalysis?.let { bilateral ->
+            item(key = "${documentedCase.id}_bilateral_header") {
+                BilateralAnalysisCard(
+                    analysis = bilateral,
+                    modifier = Modifier.widthIn(max = 760.dp)
+                )
+            }
+            items(
+                items = bilateral.sunQuotes,
+                key = { it.id }
+            ) { quote ->
+                VerbatimQuoteCard(
+                    quote = quote,
+                    isBookmarked = quote.id in bookmarkedIds,
+                    onToggleBookmark = { onToggleBookmark(quote.id) },
+                    onDateClick = { date, text -> onOpenChatAtDate(date, text) },
                     modifier = Modifier.widthIn(max = 760.dp)
                 )
             }
@@ -239,6 +266,7 @@ fun CasoDetallePane(
 @Composable
 private fun BriefExchangeCard(
     exchange: BriefExchange,
+    onDateClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -256,15 +284,9 @@ private fun BriefExchangeCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TacticPill(
-                    label = exchange.date,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Text(
-                    text = exchange.timeRange,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                DateJumpChip(
+                    dateLabel = "${exchange.date} · ${exchange.timeRange}",
+                    onClick = onDateClick
                 )
             }
             Text(
@@ -284,6 +306,7 @@ private fun GroupCaseCard(
     groupCase: GroupCase,
     bookmarkedIds: Set<String>,
     onToggleBookmark: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -306,10 +329,9 @@ private fun GroupCaseCard(
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                     contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                 )
-                Text(
-                    text = groupCase.date,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+                DateJumpChip(
+                    dateLabel = groupCase.date,
+                    onClick = { onOpenChatAtDate(groupCase.date, null) }
                 )
             }
             Text(
@@ -323,7 +345,8 @@ private fun GroupCaseCard(
                 VerbatimQuoteCard(
                     quote = quote,
                     isBookmarked = quote.id in bookmarkedIds,
-                    onToggleBookmark = { onToggleBookmark(quote.id) }
+                    onToggleBookmark = { onToggleBookmark(quote.id) },
+                    onDateClick = { date, text -> onOpenChatAtDate(date, text) }
                 )
             }
         }
@@ -354,5 +377,94 @@ private fun LabeledBlock(
             },
             color = MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+@Composable
+private fun BilateralAnalysisCard(
+    analysis: BilateralAnalysis,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(modifier = Modifier.height(2.dp))
+        SectionEyebrow(
+            text = "Autocrítica y análisis bilateral",
+            color = MaterialTheme.colorScheme.tertiary
+        )
+
+        Surface(
+            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.34f),
+            shape = MaterialTheme.shapes.large,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.45f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("bilateral_analysis_card")
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = analysis.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                LabeledBlock(
+                    label = "POR QUÉ REACCIONÓ SUN ASÍ",
+                    text = analysis.reactionContext,
+                    isQuote = false
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "FALLAS PROPIAS Y TRAMPAS DE INFANTILIZACIÓN",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    analysis.flawsAndInfantilizationTraps.forEach { flaw ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                            Text(
+                                text = flaw,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.medium,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "BALANCE OBJETIVO",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = analysis.objectiveBalance,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -74,6 +75,42 @@ fun TacticPill(
 }
 
 @Composable
+fun DateJumpChip(
+    dateLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    accentColor: Color = MaterialTheme.colorScheme.secondary
+) {
+    Surface(
+        color = accentColor.copy(alpha = 0.14f),
+        contentColor = accentColor,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.35f)),
+        modifier = modifier
+            .minimumInteractiveComponentSize()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .testTag("date_jump_${dateLabel.replace(Regex("[^a-zA-Z0-9]"), "_")}")
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Forum,
+                contentDescription = "Ir a conversación del $dateLabel",
+                modifier = Modifier.size(13.dp)
+            )
+            Text(
+                text = dateLabel,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+    }
+}
+
+@Composable
 fun CaseLinkChip(
     code: String,
     onClick: () -> Unit,
@@ -103,6 +140,7 @@ fun VerbatimQuoteCard(
     quote: LiteralQuote,
     isBookmarked: Boolean,
     onToggleBookmark: () -> Unit,
+    onDateClick: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val forensicColors = LocalForensicColors.current
@@ -113,6 +151,7 @@ fun VerbatimQuoteCard(
         QuoteCategory.ETIQUETA_DESVIO -> MaterialTheme.colorScheme.primary
         QuoteCategory.CONTRADICCION -> MaterialTheme.colorScheme.secondary
         QuoteCategory.LUCIDEZ_PARCIAL -> forensicColors.lucidityAccent
+        QuoteCategory.AUTOCRITICA_SUN -> MaterialTheme.colorScheme.tertiary
     }
 
     Surface(
@@ -135,7 +174,7 @@ fun VerbatimQuoteCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)
+                    .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 12.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -143,12 +182,12 @@ fun VerbatimQuoteCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = quote.timestamp,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = accentColor
+                        DateJumpChip(
+                            dateLabel = quote.timestamp,
+                            accentColor = accentColor,
+                            onClick = { onDateClick(quote.timestamp, quote.text) }
                         )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "${quote.speaker} · ${quote.roleLabel}",
                             style = MaterialTheme.typography.labelLarge,

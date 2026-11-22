@@ -42,6 +42,7 @@ import com.example.R
 import com.example.model.EvidenceBankCategory
 import com.example.model.EvidenceEntry
 import com.example.ui.components.CaseLinkChip
+import com.example.ui.components.DateJumpChip
 import com.example.ui.components.SectionEyebrow
 import com.example.ui.components.TacticPill
 import com.example.ui.theme.LocalForensicColors
@@ -56,6 +57,7 @@ fun EvidenciaScreen(
     onClearFilters: () -> Unit,
     onToggleBookmark: (String) -> Unit,
     onOpenCase: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -199,6 +201,7 @@ fun EvidenciaScreen(
                     isBookmarked = entry.id in uiState.bookmarkedIds,
                     onToggleBookmark = { onToggleBookmark(entry.id) },
                     onOpenCase = { onOpenCase(entry.caseId) },
+                    onDateClick = { onOpenChatAtDate(entry.timestamp, entry.quote) },
                     modifier = Modifier.widthIn(max = 760.dp)
                 )
             }
@@ -214,6 +217,7 @@ private fun EvidenceEntryCard(
     isBookmarked: Boolean,
     onToggleBookmark: () -> Unit,
     onOpenCase: () -> Unit,
+    onDateClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val forensicColors = LocalForensicColors.current
@@ -250,10 +254,10 @@ private fun EvidenceEntryCard(
                         containerColor = categoryColor.copy(alpha = 0.16f),
                         contentColor = categoryColor
                     )
-                    Text(
-                        text = entry.timestamp,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    DateJumpChip(
+                        dateLabel = entry.timestamp,
+                        accentColor = categoryColor,
+                        onClick = onDateClick
                     )
                 }
                 IconButton(
@@ -278,7 +282,7 @@ private fun EvidenceEntryCard(
             )
 
             Text(
-                text = "Con ${entry.interlocutor} · ${entry.note}",
+                text = "Ángel (con ${entry.interlocutor}) · ${entry.note}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -18,11 +18,13 @@ import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FolderCopy
 import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.outlined.AccountTree
 import androidx.compose.material.icons.outlined.FolderCopy
 import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,9 +40,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -57,6 +61,7 @@ import androidx.navigation.navArgument
 import com.example.data.DossierRepository
 import com.example.ui.screens.CasoDetallePane
 import com.example.ui.screens.CasosScreen
+import com.example.ui.screens.ChatViewerScreen
 import com.example.ui.screens.EvidenciaScreen
 import com.example.ui.screens.PatronScreen
 import com.example.ui.screens.PsicologiaScreen
@@ -67,6 +72,7 @@ import com.example.viewmodel.ThemeModePreference
 object DossierRoutes {
     const val ROUTE_PATRON = "patron"
     const val ROUTE_CASOS = "casos"
+    const val ROUTE_CHAT = "chat"
     const val ROUTE_PSICOLOGIA = "psicologia"
     const val ROUTE_EVIDENCIA = "evidencia"
     const val ROUTE_CASO_DETALLE = "caso_detalle/{caseId}"
@@ -98,6 +104,13 @@ private val primaryDestinations = listOf(
         testTag = "nav_casos"
     ),
     NavDestinationItem(
+        route = DossierRoutes.ROUTE_CHAT,
+        labelRes = R.string.nav_chat,
+        selectedIcon = Icons.Filled.Forum,
+        unselectedIcon = Icons.Outlined.Forum,
+        testTag = "nav_chat"
+    ),
+    NavDestinationItem(
         route = DossierRoutes.ROUTE_PSICOLOGIA,
         labelRes = R.string.nav_psicologia,
         selectedIcon = Icons.Filled.Psychology,
@@ -120,6 +133,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel: DossierViewModel = viewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val context = LocalContext.current
+
+            LaunchedEffect(Unit) {
+                viewModel.ensureChatLoaded(context)
+            }
 
             val useDarkTheme = when (uiState.themePreference) {
                 ThemeModePreference.DARK -> true
@@ -158,6 +176,11 @@ private fun DossierAppShell(
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    val openChatAtDate: (String, String?) -> Unit = { dateStr, highlightQuery ->
+        viewModel.jumpToChatDate(dateStr, highlightQuery)
+        navigatePrimary(DossierRoutes.ROUTE_CHAT)
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -264,8 +287,8 @@ private fun DossierAppShell(
                             uiState = uiState,
                             onSelectPhase = viewModel::selectPhase,
                             onSelectComparison = viewModel::selectComparison,
-                            onToggleMethodology = viewModel::toggleMethodology,
-                            onOpenCase = openCaseDetail
+                            onOpenCase = openCaseDetail,
+                            onOpenChatAtDate = openChatAtDate
                         )
                     }
                     composable(DossierRoutes.ROUTE_CASOS) {
@@ -277,14 +300,26 @@ private fun DossierAppShell(
                             onClearFilters = viewModel::clearCaseFilters,
                             onOpenCase = openCaseDetail,
                             onSelectCaseInSplitPane = viewModel::selectCase,
-                            onToggleBookmark = viewModel::toggleBookmark
+                            onToggleBookmark = viewModel::toggleBookmark,
+                            onOpenChatAtDate = openChatAtDate
+                        )
+                    }
+                    composable(DossierRoutes.ROUTE_CHAT) {
+                        ChatViewerScreen(
+                            uiState = uiState,
+                            onSearchChange = viewModel::updateChatSearch,
+                            onSelectSpeaker = viewModel::selectChatSpeaker,
+                            onJumpToDate = { dateKey -> viewModel.jumpToChatDate(dateKey, null) },
+                            onClearJumpTarget = viewModel::clearChatJumpTarget
                         )
                     }
                     composable(DossierRoutes.ROUTE_PSICOLOGIA) {
                         PsicologiaScreen(
                             uiState = uiState,
                             onToggleMechanism = viewModel::toggleMechanismExpanded,
-                            onOpenCase = openCaseDetail
+                            onToggleSunDynamic = viewModel::toggleSunDynamicExpanded,
+                            onOpenCase = openCaseDetail,
+                            onOpenChatAtDate = openChatAtDate
                         )
                     }
                     composable(DossierRoutes.ROUTE_EVIDENCIA) {
@@ -295,7 +330,8 @@ private fun DossierAppShell(
                             onToggleBookmarkedFilter = viewModel::toggleShowOnlyBookmarked,
                             onClearFilters = viewModel::clearEvidenceFilters,
                             onToggleBookmark = viewModel::toggleBookmark,
-                            onOpenCase = openCaseDetail
+                            onOpenCase = openCaseDetail,
+                            onOpenChatAtDate = openChatAtDate
                         )
                     }
                     composable(
@@ -309,6 +345,7 @@ private fun DossierAppShell(
                             documentedCase = documentedCase,
                             bookmarkedIds = uiState.bookmarkedIds,
                             onToggleBookmark = viewModel::toggleBookmark,
+                            onOpenChatAtDate = openChatAtDate,
                             showBackButton = true,
                             onBack = { navController.popBackStack() }
                         )

@@ -15,7 +15,8 @@ enum class QuoteCategory(val label: String) {
     EXCUSA_EXTERNA("Excusa externa"),
     ETIQUETA_DESVIO("Etiqueta / Desvío"),
     CONTRADICCION("Contradicción literal"),
-    LUCIDEZ_PARCIAL("Lucidez parcial")
+    LUCIDEZ_PARCIAL("Lucidez parcial"),
+    AUTOCRITICA_SUN("Punto vulnerable / Reacción (Sun)")
 }
 
 enum class EvidenceBankCategory(val label: String) {
@@ -85,6 +86,14 @@ data class GroupCase(
     val quotes: List<LiteralQuote>
 )
 
+data class BilateralAnalysis(
+    val title: String,
+    val reactionContext: String,
+    val flawsAndInfantilizationTraps: List<String>,
+    val sunQuotes: List<LiteralQuote>,
+    val objectiveBalance: String
+)
+
 data class DocumentedCase(
     val id: String,
     val code: String,
@@ -97,7 +106,8 @@ data class DocumentedCase(
     val overview: String,
     val sections: List<CaseSection> = emptyList(),
     val briefExchanges: List<BriefExchange> = emptyList(),
-    val groupCases: List<GroupCase> = emptyList()
+    val groupCases: List<GroupCase> = emptyList(),
+    val bilateralAnalysis: BilateralAnalysis? = null
 )
 
 data class PsychMechanism(
@@ -110,6 +120,18 @@ data class PsychMechanism(
     val keyQuoteTimestamp: String,
     val points: List<String>,
     val relatedCaseIds: List<String>
+)
+
+data class SunDynamicEntry(
+    val id: String,
+    val code: String,
+    val title: String,
+    val triggerFromAngel: String,
+    val sunReactionReason: String,
+    val objectiveFlaw: String,
+    val timestamp: String,
+    val quote: String,
+    val relatedCaseId: String
 )
 
 data class EvidenceEntry(
