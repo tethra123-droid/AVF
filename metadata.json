@@ -1,0 +1,6 @@
+{
+  "name": "Dossier Ángel",
+  "description": "Archivo interactivo de análisis conversacional, retórico y conductual basado en el registro literal del chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
