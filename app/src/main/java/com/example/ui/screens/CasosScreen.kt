@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -49,6 +48,7 @@ import com.example.R
 import com.example.data.DossierRepository
 import com.example.model.DocumentedCase
 import com.example.model.RhetoricalTactic
+import com.example.ui.components.DateJumpChip
 import com.example.ui.components.SectionEyebrow
 import com.example.ui.components.TacticPill
 import com.example.viewmodel.DossierUiState
@@ -63,6 +63,7 @@ fun CasosScreen(
     onOpenCase: (String) -> Unit,
     onSelectCaseInSplitPane: (String) -> Unit,
     onToggleBookmark: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -78,6 +79,7 @@ fun CasosScreen(
                     onSelectTactic = onSelectTactic,
                     onClearFilters = onClearFilters,
                     onCaseClick = onSelectCaseInSplitPane,
+                    onOpenChatAtDate = onOpenChatAtDate,
                     modifier = Modifier
                         .weight(0.44f)
                         .fillMaxHeight()
@@ -90,6 +92,7 @@ fun CasosScreen(
                     documentedCase = activeCase,
                     bookmarkedIds = uiState.bookmarkedIds,
                     onToggleBookmark = onToggleBookmark,
+                    onOpenChatAtDate = onOpenChatAtDate,
                     showBackButton = false,
                     onBack = {},
                     modifier = Modifier
@@ -106,6 +109,7 @@ fun CasosScreen(
                 onSelectTactic = onSelectTactic,
                 onClearFilters = onClearFilters,
                 onCaseClick = onOpenCase,
+                onOpenChatAtDate = onOpenChatAtDate,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -122,6 +126,7 @@ private fun CaseListColumn(
     onSelectTactic: (RhetoricalTactic?) -> Unit,
     onClearFilters: () -> Unit,
     onCaseClick: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -262,7 +267,8 @@ private fun CaseListColumn(
                 CaseSummaryCard(
                     documentedCase = item,
                     isSelected = isSplitMode && item.id == uiState.selectedCaseId,
-                    onClick = { onCaseClick(item.id) }
+                    onClick = { onCaseClick(item.id) },
+                    onDateClick = { onOpenChatAtDate(item.dateRange, null) }
                 )
             }
         }
@@ -276,7 +282,8 @@ private fun CaseListColumn(
 private fun CaseSummaryCard(
     documentedCase: DocumentedCase,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDateClick: () -> Unit
 ) {
     Surface(
         color = if (isSelected) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainer,
@@ -303,7 +310,8 @@ private fun CaseSummaryCard(
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer,
@@ -316,10 +324,9 @@ private fun CaseSummaryCard(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
-                    Text(
-                        text = documentedCase.dateRange,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                    DateJumpChip(
+                        dateLabel = documentedCase.dateRange,
+                        onClick = onDateClick
                     )
                 }
                 Icon(

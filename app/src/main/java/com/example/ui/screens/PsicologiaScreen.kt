@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +45,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.example.model.PsychMechanism
+import com.example.model.SunDynamicEntry
 import com.example.ui.components.CaseLinkChip
+import com.example.ui.components.DateJumpChip
 import com.example.ui.components.SectionEyebrow
 import com.example.ui.theme.LocalForensicColors
 import com.example.viewmodel.DossierUiState
@@ -55,7 +56,9 @@ import com.example.viewmodel.DossierUiState
 fun PsicologiaScreen(
     uiState: DossierUiState,
     onToggleMechanism: (String) -> Unit,
+    onToggleSunDynamic: (String) -> Unit,
     onOpenCase: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -77,30 +80,6 @@ fun PsicologiaScreen(
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Surface(
-                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
-                    shape = MaterialTheme.shapes.medium,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Psychology,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Este análisis evalúa dinámicas observables de comunicación, retórica y blindaje del ego en el registro textual; no constituye un diagnóstico clínico.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
             }
         }
 
@@ -113,6 +92,49 @@ fun PsicologiaScreen(
                 isExpanded = mechanism.id in uiState.expandedMechanismIds,
                 onToggle = { onToggleMechanism(mechanism.id) },
                 onOpenCase = onOpenCase,
+                onOpenChatAtDate = onOpenChatAtDate,
+                modifier = Modifier.widthIn(max = 760.dp)
+            )
+        }
+
+        // Section 3B: Bilateral analysis & Sun's reaction to infantilization
+        item {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 760.dp)
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(modifier = Modifier.height(4.dp))
+                SectionEyebrow(
+                    text = "3B. Dinámica bilateral y autocrítica (Sun)",
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+                Text(
+                    text = "Por qué reaccionas así y cuándo caes en la infantilización",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "Análisis objetivo de las respuestas de Sun frente a las provocaciones, el paternalismo y los cambios de marco de Ángel.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        items(
+            items = uiState.sunDynamics,
+            key = { it.id }
+        ) { entry ->
+            SunDynamicCard(
+                entry = entry,
+                isExpanded = entry.id in uiState.expandedSunDynamicIds,
+                onToggle = { onToggleSunDynamic(entry.id) },
+                onOpenCase = onOpenCase,
+                onOpenChatAtDate = onOpenChatAtDate,
                 modifier = Modifier.widthIn(max = 760.dp)
             )
         }
@@ -138,7 +160,7 @@ fun PsicologiaScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Los registros textuales respaldan un patrón repetido de afirmación fuerte → refutación → reescritura retroactiva / excusa externa → descalificación psicológica o desvío técnico → cierre unilateral, observable en al menos 8 intercambios distintos con Sun entre enero y noviembre, además de episodios equivalentes con Pablo Coronel, Armando, MariaJosé, N Castillo, Tarek y Daniel.",
+                        text = "Los registros textuales respaldan un patrón repetido de afirmación fuerte → refutación → reescritura retroactiva / excusa externa → descalificación psicológica o desvío técnico → cierre unilateral, observable en 9 intercambios documentados con Sun entre enero y noviembre, además de episodios equivalentes con Pablo Coronel, Armando, MariaJosé, N Castillo, Tarek y Daniel.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -157,6 +179,7 @@ private fun MechanismCard(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     onOpenCase: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isLucidity = mechanism.letter == "F"
@@ -245,12 +268,12 @@ private fun MechanismCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = mechanism.keyQuoteTimestamp,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = badgeColor
+                            DateJumpChip(
+                                dateLabel = mechanism.keyQuoteTimestamp,
+                                accentColor = badgeColor,
+                                onClick = { onOpenChatAtDate(mechanism.keyQuoteTimestamp, mechanism.keyQuote) }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = mechanism.keyQuote,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
@@ -286,6 +309,144 @@ private fun MechanismCard(
                                 onClick = { onOpenCase(caseId) }
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SunDynamicCard(
+    entry: SunDynamicEntry,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    onOpenCase: (String) -> Unit,
+    onOpenChatAtDate: (String, String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accent = MaterialTheme.colorScheme.tertiary
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(
+            1.dp,
+            if (isExpanded) accent.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.large)
+            .clickable(onClick = onToggle)
+            .testTag("sun_dynamic_card_${entry.id}")
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .minimumInteractiveComponentSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = entry.code,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = accent
+                    )
+                    Text(
+                        text = entry.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = if (isExpanded) "Contraer ${entry.code}" else "Expandir ${entry.code}",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically(spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier.padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            text = "DETONANTE DE ÁNGEL",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = entry.triggerFromAngel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            text = "POR QUÉ REACCIONAS ASÍ",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accent
+                        )
+                        Text(
+                            text = entry.sunReactionReason,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            text = "FALLA OBJETIVA / TRAMPA EN LA QUE CAES",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = entry.objectiveFlaw,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = MaterialTheme.shapes.medium,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            DateJumpChip(
+                                dateLabel = entry.timestamp,
+                                accentColor = accent,
+                                onClick = { onOpenChatAtDate(entry.timestamp, entry.quote) }
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "«${entry.quote}»",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CaseLinkChip(
+                            code = entry.relatedCaseId.replace("caso_", "CASO 0"),
+                            onClick = { onOpenCase(entry.relatedCaseId) }
+                        )
                     }
                 }
             }
